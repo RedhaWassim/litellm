@@ -1802,6 +1802,7 @@ class LlmProviders(str, Enum):
     AIOHTTP_OPENAI = "aiohttp_openai"
     LANGFUSE = "langfuse"
     HUMANLOOP = "humanloop"
+    EDENAI = "edenai"
 
 
 class LiteLLMLoggingBaseClass:
