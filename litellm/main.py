@@ -185,6 +185,8 @@ from litellm.utils import (
     TranscriptionResponse,
 )
 
+
+
 ####### ENVIRONMENT VARIABLES ###################
 openai_chat_completions = OpenAIChatCompletion()
 openai_text_completions = OpenAITextCompletion()
@@ -2810,15 +2812,12 @@ def completion(  # type: ignore # noqa: PLR0915
         elif custom_llm_provider == "edenai" : 
             edenai_key = (
                 api_key
-                or litellm.cohere_key
-                or get_secret("EDENAI_API_kEY")
+                or litellm.edenai_api_key
+                or get_secret("EDENAI_API_KEY")
                 or litellm.api_key
             )
             api_base = (
-                api_base
-                or litellm.api_base
-                or get_secret("EDENAI_API_KEY")
-                or "https://api.edenai.run/v2/multimodal/chat"
+                "https://api.edenai.run/v2/multimodal/chat"
             )
 
             headers = headers or litellm.headers or {}
@@ -2827,7 +2826,6 @@ def completion(  # type: ignore # noqa: PLR0915
 
             if extra_headers is not None:
                 headers.update(extra_headers)
-
             response = base_llm_http_handler.completion(
                 model=model,
                 stream=stream,
@@ -2837,17 +2835,13 @@ def completion(  # type: ignore # noqa: PLR0915
                 model_response=model_response,
                 optional_params=optional_params,
                 litellm_params=litellm_params,
-                custom_llm_provider="cohere",
+                custom_llm_provider="edenai",
                 timeout=timeout,
                 headers=headers,
                 encoding=encoding,
-                api_key=cohere_key,
+                api_key=edenai_key,
                 logging_obj=logging,
                 client=client,
-            )
-            ## LOGGING
-            logging.post_call(
-                input=messages, api_key=openai.api_key, original_response=response
             )
 
         elif custom_llm_provider == "aiohttp_openai":

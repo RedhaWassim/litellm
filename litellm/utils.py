@@ -3576,6 +3576,21 @@ def get_optional_params(  # noqa: PLR0915
                     else False
                 ),
             )
+    elif custom_llm_provider == "edenai":
+        supported_params = get_supported_openai_params(
+            model=model, custom_llm_provider="azure"
+        )
+        _check_valid_arg(supported_params=supported_params)
+        optional_params = litellm.EdenAIChatConfig().map_openai_params(
+            non_default_params=non_default_params,
+            optional_params=optional_params,
+            model=model,
+            drop_params=(
+                drop_params
+                if drop_params is not None and isinstance(drop_params, bool)
+                else False
+            ),
+        )
     else:  # assume passing in params for openai-like api
         supported_params = get_supported_openai_params(
             model=model, custom_llm_provider="custom_openai"
@@ -3939,6 +3954,10 @@ def get_api_key(llm_provider: str, dynamic_api_key: Optional[str]):
             or litellm.togetherai_api_key
             or get_secret("TOGETHERAI_API_KEY")
             or get_secret("TOGETHER_AI_TOKEN")
+        )
+    elif llm_provider == "edenai": 
+        api_key = (
+            api_key or litellm.edenai_api_key or get_secret("EDENAI_API_KEY")
         )
     return api_key
 
