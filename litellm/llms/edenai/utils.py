@@ -22,12 +22,7 @@ def validate_environment(
         "Authorization": "bearer $CO_API_KEY"
     }
     """
-    headers.update(
-        {
-            "accept": "application/json",
-            "content-type": "application/json"
-        }
-    )
+    headers.update({"accept": "application/json", "content-type": "application/json"})
 
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"

@@ -8,6 +8,7 @@ from litellm.llms.base_llm.chat.transformation import BaseConfig, BaseLLMExcepti
 from litellm.types.llms.openai import AllMessageValues
 from litellm.types.utils import ModelResponse, Usage
 from ..utils import validate_environment as edenai_validate_environment
+
 if TYPE_CHECKING:
     from litellm.litellm_core_utils.litellm_logging import Logging as _LiteLLMLoggingObj
 
@@ -17,10 +18,14 @@ else:
 
 
 class EdenAIError(BaseLLMException):
-    def __init__(self, status_code: int, message: str, headers: Optional[httpx.Headers] = None):
+    def __init__(
+        self, status_code: int, message: str, headers: Optional[httpx.Headers] = None
+    ):
         self.status_code = status_code
         self.message = message
-        self.request = httpx.Request(method="POST", url="https://api.edenai.run/v2/multimodal/chat")
+        self.request = httpx.Request(
+            method="POST", url="https://api.edenai.run/v2/multimodal/chat"
+        )
         self.response = httpx.Response(status_code=status_code, request=self.request)
         super().__init__(status_code=status_code, message=message, headers=headers)
 
@@ -54,8 +59,6 @@ class EdenAIChatConfig(BaseConfig):
         self.chat_global_actions = chat_global_actions
         self.stop_sequences = stop_sequences
 
-
-
     def get_supported_openai_params(self, model: str) -> List[str]:
         return [
             "temperature",
@@ -64,8 +67,9 @@ class EdenAIChatConfig(BaseConfig):
             "top_k",
             "stop",
             "tools",
-            "tool_choice"
+            "tool_choice",
         ]
+
     def map_openai_params(
         self,
         non_default_params: dict,
@@ -88,7 +92,7 @@ class EdenAIChatConfig(BaseConfig):
                 optional_params["available_tools"] = value
 
         return optional_params
-    
+
     def validate_environment(
         self,
         headers: dict,
@@ -105,7 +109,7 @@ class EdenAIChatConfig(BaseConfig):
             optional_params=optional_params,
             api_key=api_key,
         )
-    
+
     def _is_multimodal_request(self, messages: List[AllMessageValues]) -> bool:
         """
         Check if the request is a multimodal request by inspecting the content of the messages.
@@ -123,14 +127,21 @@ class EdenAIChatConfig(BaseConfig):
                     parsed_content = json.loads(content)
                     if isinstance(parsed_content, list):
                         for item in parsed_content:
-                            if isinstance(item, dict) and "type" in item and item["type"] in ["text", "media_url","media_base64"]:
+                            if (
+                                isinstance(item, dict)
+                                and "type" in item
+                                and item["type"]
+                                in ["text", "media_url", "media_base64"]
+                            ):
                                 return True
 
                 except json.JSONDecodeError:
                     continue
         return False
 
-    def _process_multimodal_messages(self, messages: List[AllMessageValues]) -> List[Dict[str, Any]]:
+    def _process_multimodal_messages(
+        self, messages: List[AllMessageValues]
+    ) -> List[Dict[str, Any]]:
         """
         Process messages for a multimodal request by parsing the content.
 
@@ -168,15 +179,15 @@ class EdenAIChatConfig(BaseConfig):
         """
         formatted_tools = []
         for tool in tools:
-            function_data = tool['function']
+            function_data = tool["function"]
             formatted_tool = {
-                "name": function_data['name'],
-                "description": function_data['description'],
+                "name": function_data["name"],
+                "description": function_data["description"],
                 "parameters": {
-                    "type": function_data['parameters']['type'],
-                    "properties": function_data['parameters']['properties'],
-                    "required": function_data['parameters']['required']
-                }
+                    "type": function_data["parameters"]["type"],
+                    "properties": function_data["parameters"]["properties"],
+                    "required": function_data["parameters"]["required"],
+                },
             }
             formatted_tools.append(formatted_tool)
         return formatted_tools
@@ -193,14 +204,21 @@ class EdenAIChatConfig(BaseConfig):
             formatted_messages = self._process_multimodal_messages(messages)
         else:
             formatted_messages = [
-                {"role": msg["role"], "content": [{"type": "text", "content": {"text": msg["content"]}}]}
+                {
+                    "role": msg["role"],
+                    "content": [{"type": "text", "content": {"text": msg["content"]}}],
+                }
                 for msg in messages
             ]
 
         available_tools_param = optional_params.get("available_tools")
 
         if available_tools_param is not None:
-            text = formatted_messages[0]["content"][0]["content"].get("text", "") if formatted_messages else ""
+            text = (
+                formatted_messages[0]["content"][0]["content"].get("text", "")
+                if formatted_messages
+                else ""
+            )
             available_tools = self.format_tools(available_tools_param)
             payload = {
                 **optional_params,
@@ -224,6 +242,7 @@ class EdenAIChatConfig(BaseConfig):
             }
 
         return payload
+
     def transform_response(
         self,
         model: str,
@@ -242,7 +261,9 @@ class EdenAIChatConfig(BaseConfig):
             raw_response_json = raw_response.json()
             provider_response = raw_response_json.get(model, {})
 
-            model_response.choices[0].message.content = provider_response.get("generated_text", "")
+            model_response.choices[0].message.content = provider_response.get(
+                "generated_text", ""
+            )
 
             original_response = provider_response.get("original_response", {})
             usage_data = original_response.get("usage", {})
@@ -261,8 +282,8 @@ class EdenAIChatConfig(BaseConfig):
                 completion_tokens_details=completion_tokens_details,
                 prompt_tokens_details=prompt_tokens_details,
             )
-            
-            # handle tools 
+
+            # handle tools
             tool_calls = []
             message_list = provider_response.get("message", [])
 
@@ -286,16 +307,16 @@ class EdenAIChatConfig(BaseConfig):
                     tool_calls=formatted_tool_calls,
                     content=None,
                 )
-                model_response.choices[0].message = _message 
+                model_response.choices[0].message = _message
 
         except Exception as e:
             raise EdenAIError(status_code=raw_response.status_code, message=str(e))
 
         return model_response
 
-
-
     def get_error_class(
         self, error_message: str, status_code: int, headers: Union[dict, httpx.Headers]
     ) -> BaseLLMException:
-        return EdenAIError(status_code=status_code, message=error_message, headers=headers)
+        return EdenAIError(
+            status_code=status_code, message=error_message, headers=headers
+        )

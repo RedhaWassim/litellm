@@ -484,6 +484,7 @@ galadriel_models: List = []
 sambanova_models: List = []
 edenai_models: List = []
 
+
 def add_known_models():
     for key, value in model_cost.items():
         if value.get("litellm_provider") == "openai":
@@ -914,7 +915,7 @@ models_by_provider: dict = {
     "cerebras": cerebras_models,
     "galadriel": galadriel_models,
     "sambanova": sambanova_models,
-    "edenai": edenai_models
+    "edenai": edenai_models,
 }
 
 # mapping for those models which have larger equivalents
