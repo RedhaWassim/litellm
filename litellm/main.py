@@ -185,6 +185,8 @@ from litellm.utils import (
     TranscriptionResponse,
 )
 
+
+
 ####### ENVIRONMENT VARIABLES ###################
 openai_chat_completions = OpenAIChatCompletion()
 openai_text_completions = OpenAITextCompletion()
@@ -2806,6 +2808,47 @@ def completion(  # type: ignore # noqa: PLR0915
                 )
                 return response
             response = model_response
+        
+        elif custom_llm_provider == "edenai" : 
+            edenai_key = (
+                api_key
+                or litellm.edenai_api_key
+                or get_secret("EDENAI_API_KEY")
+                or litellm.api_key
+            )
+            if tools is not None:
+                api_base = (
+                    "https://api.edenai.run/v2/text/chat"
+                )
+            else:
+                api_base = (
+                    "https://api.edenai.run/v2/multimodal/chat"
+                )
+
+            headers = headers or litellm.headers or {}
+            if headers is None:
+                headers = {}
+
+            if extra_headers is not None:
+                headers.update(extra_headers)
+            response = base_llm_http_handler.completion(
+                model=model,
+                stream=stream,
+                messages=messages,
+                acompletion=acompletion,
+                api_base=api_base,
+                model_response=model_response,
+                optional_params=optional_params,
+                litellm_params=litellm_params,
+                custom_llm_provider="edenai",
+                timeout=timeout,
+                headers=headers,
+                encoding=encoding,
+                api_key=edenai_key,
+                logging_obj=logging,
+                client=client,
+            )
+
         elif custom_llm_provider == "aiohttp_openai":
             api_base = (
                 api_base  # for deepinfra/perplexity/anyscale/groq/friendliai we check in get_llm_provider and pass in the api base from there

@@ -1969,6 +1969,9 @@ def register_model(model_cost: Union[str, dict]):  # noqa: PLR0915
         elif value.get("litellm_provider") == "bedrock":
             if key not in litellm.bedrock_models:
                 litellm.bedrock_models.append(key)
+        elif value.get("litellm_provider") == "edenai":
+            if key not in litellm.edenai_models:
+                litellm.edenai_models.append(key)
     return model_cost
 
 
@@ -2697,6 +2700,7 @@ def get_optional_params(  # noqa: PLR0915
             and custom_llm_provider != "bedrock"
             and custom_llm_provider != "ollama_chat"
             and custom_llm_provider != "openrouter"
+            and custom_llm_provider != "edenai"
             and custom_llm_provider not in litellm.openai_compatible_providers
         ):
             if custom_llm_provider == "ollama":
@@ -3572,6 +3576,21 @@ def get_optional_params(  # noqa: PLR0915
                     else False
                 ),
             )
+    elif custom_llm_provider == "edenai":
+        supported_params = get_supported_openai_params(
+            model=model, custom_llm_provider="azure"
+        )
+        _check_valid_arg(supported_params=supported_params)
+        optional_params = litellm.EdenAIChatConfig().map_openai_params(
+            non_default_params=non_default_params,
+            optional_params=optional_params,
+            model=model,
+            drop_params=(
+                drop_params
+                if drop_params is not None and isinstance(drop_params, bool)
+                else False
+            ),
+        )
     else:  # assume passing in params for openai-like api
         supported_params = get_supported_openai_params(
             model=model, custom_llm_provider="custom_openai"
@@ -3935,6 +3954,10 @@ def get_api_key(llm_provider: str, dynamic_api_key: Optional[str]):
             or litellm.togetherai_api_key
             or get_secret("TOGETHERAI_API_KEY")
             or get_secret("TOGETHER_AI_TOKEN")
+        )
+    elif llm_provider == "edenai": 
+        api_key = (
+            api_key or litellm.edenai_api_key or get_secret("EDENAI_API_KEY")
         )
     return api_key
 
@@ -4898,6 +4921,11 @@ def validate_environment(  # noqa: PLR0915
             else:
                 missing_keys.append("CLOUDFLARE_API_KEY")
                 missing_keys.append("CLOUDFLARE_API_BASE")
+        elif custom_llm_provider == "edenai":
+            if "EDENAI_API_KEY" in os.environ:
+                keys_in_environment = True
+            else : 
+                missing_keys.append("EDENAI_API_KEY")
     else:
         ## openai - chatcompletion + text completion
         if (
@@ -4980,6 +5008,11 @@ def validate_environment(  # noqa: PLR0915
                 keys_in_environment = True
             else:
                 missing_keys.append("NLP_CLOUD_API_KEY")
+        elif model in litellm.edenai_models:
+            if "EDENAI_API_KEY" in os.environ:
+                keys_in_environment = True
+            else:
+                missing_keys.append("EDENAI_API_KEY")
 
     if api_key is not None:
         new_missing_keys = []
@@ -6244,6 +6277,8 @@ class ProviderConfigManager:
             return litellm.TritonConfig()
         elif litellm.LlmProviders.PETALS == provider:
             return litellm.PetalsConfig()
+        elif litellm.LlmProviders.EDENAI == provider:
+            return litellm.EdenAIChatConfig()
         elif litellm.LlmProviders.BEDROCK == provider:
             base_model = litellm.AmazonConverseConfig()._get_base_model(model)
             if base_model in litellm.bedrock_converse_models:
