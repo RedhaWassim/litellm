@@ -3,6 +3,7 @@ import json
 import httpx
 import json
 
+import litellm
 from litellm.llms.base_llm.chat.transformation import BaseConfig, BaseLLMException
 from litellm.types.llms.openai import AllMessageValues
 from litellm.types.utils import ModelResponse, Usage
@@ -32,6 +33,8 @@ class EdenAIChatConfig(BaseConfig):
     chat_global_actions: Optional[bool] = None
     stop_sequences: Optional[List[str]] = None
     api_key: Optional[str] = None
+    tools: Optional[list] = None
+    tool_results: Optional[list] = None
 
     def __init__(
         self,
@@ -60,6 +63,8 @@ class EdenAIChatConfig(BaseConfig):
             "top_p",
             "top_k",
             "stop",
+            "tools",
+            "tool_choice"
         ]
     def map_openai_params(
         self,
@@ -79,6 +84,9 @@ class EdenAIChatConfig(BaseConfig):
                 optional_params["p"] = value
             if param == "stop":
                 optional_params["stop_sequences"] = value
+            if param == "tools":
+                optional_params["available_tools"] = value
+
         return optional_params
     
     def validate_environment(
@@ -147,7 +155,32 @@ class EdenAIChatConfig(BaseConfig):
                 raise ValueError("Unsupported content format for multimodal request")
 
         return formatted_messages
-    
+
+    def format_tools(self, tools: list) -> list:
+        """
+        Format the available tools for the API request.
+
+        Args:
+            tools (list): The list of available tools.
+
+        Returns:
+            dict: The formatted tools.
+        """
+        formatted_tools = []
+        for tool in tools:
+            function_data = tool['function']
+            formatted_tool = {
+                "name": function_data['name'],
+                "description": function_data['description'],
+                "parameters": {
+                    "type": function_data['parameters']['type'],
+                    "properties": function_data['parameters']['properties'],
+                    "required": function_data['parameters']['required']
+                }
+            }
+            formatted_tools.append(formatted_tool)
+        return formatted_tools
+
     def transform_request(
         self,
         model: str,
@@ -164,15 +197,31 @@ class EdenAIChatConfig(BaseConfig):
                 for msg in messages
             ]
 
-        payload = {
-            **optional_params,
-            "providers": [model],
-            "messages": formatted_messages,
-            "response_as_dict": True,
-            "attributes_as_list": False,
-            "show_base_64": True,
-            "show_original_response": True,
-        }
+        available_tools_param = optional_params.get("available_tools")
+
+        if available_tools_param is not None:
+            text = formatted_messages[0]["content"][0]["content"].get("text", "") if formatted_messages else ""
+            available_tools = self.format_tools(available_tools_param)
+            payload = {
+                **optional_params,
+                "available_tools": available_tools,
+                "providers": [model],
+                "text": text,
+                "response_as_dict": True,
+                "attributes_as_list": False,
+                "show_base_64": True,
+                "show_original_response": True,
+            }
+        else:
+            payload = {
+                **optional_params,
+                "providers": [model],
+                "messages": formatted_messages,
+                "response_as_dict": True,
+                "attributes_as_list": False,
+                "show_base_64": True,
+                "show_original_response": True,
+            }
 
         return payload
     def transform_response(
@@ -212,11 +261,39 @@ class EdenAIChatConfig(BaseConfig):
                 completion_tokens_details=completion_tokens_details,
                 prompt_tokens_details=prompt_tokens_details,
             )
+            
+            # handle tools 
+            tool_calls = []
+            message_list = provider_response.get("message", [])
+
+            if len(message_list) > 1 and message_list[1].get("tool_calls"):
+                tool_calls = message_list[1]["tool_calls"]
+
+            if tool_calls:
+                formatted_tool_calls = []
+                for tool in tool_calls:
+                    tool_call = {
+                        "id": tool.get("id", ""),
+                        "type": "function",
+                        "function": {
+                            "name": tool.get("name", ""),
+                            "arguments": tool.get("arguments", "{}"),
+                        },
+                    }
+                    formatted_tool_calls.append(tool_call)
+
+                _message = litellm.Message(
+                    tool_calls=formatted_tool_calls,
+                    content=None,
+                )
+                model_response.choices[0].message = _message 
 
         except Exception as e:
             raise EdenAIError(status_code=raw_response.status_code, message=str(e))
 
         return model_response
+
+
 
     def get_error_class(
         self, error_message: str, status_code: int, headers: Union[dict, httpx.Headers]
