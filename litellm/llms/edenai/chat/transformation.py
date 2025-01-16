@@ -200,48 +200,42 @@ class EdenAIChatConfig(BaseConfig):
         litellm_params: dict,
         headers: dict,
     ) -> dict:
-        if self._is_multimodal_request(messages):
-            formatted_messages = self._process_multimodal_messages(messages)
-        else:
-            formatted_messages = [
+        formatted_messages = (
+            self._process_multimodal_messages(messages)
+            if self._is_multimodal_request(messages)
+            else [
                 {
                     "role": msg["role"],
                     "content": [{"type": "text", "content": {"text": msg["content"]}}],
                 }
                 for msg in messages
             ]
+        )
 
-        available_tools_param = optional_params.get("available_tools")
+        available_tools = optional_params.pop("available_tools", None)
+        if available_tools:
+            available_tools = self.format_tools(available_tools)
 
-        if available_tools_param is not None:
-            text = (
-                formatted_messages[0]["content"][0]["content"].get("text", "")
-                if formatted_messages
-                else ""
-            )
-            available_tools = self.format_tools(available_tools_param)
-            payload = {
-                **optional_params,
-                "available_tools": available_tools,
-                "providers": [model],
-                "text": text,
-                "response_as_dict": True,
-                "attributes_as_list": False,
-                "show_base_64": True,
-                "show_original_response": True,
-            }
-        else:
-            payload = {
-                **optional_params,
-                "providers": [model],
-                "messages": formatted_messages,
-                "response_as_dict": True,
-                "attributes_as_list": False,
-                "show_base_64": True,
-                "show_original_response": True,
-            }
+        payload = {
+            **optional_params, 
+            "providers": [model],
+            "messages": formatted_messages,
+            "response_as_dict": True,
+            "attributes_as_list": False,
+            "show_base_64": True,
+            "show_original_response": True,
+        }
+        print(payload["messages"])
+
+        if available_tools:
+            # print("*"*10)
+            # print("AVAILABLE TOOLS")
+            # print(available_tools)
+            # print("*"*10)
+            payload["available_tools"] = available_tools
 
         return payload
+
 
     def transform_response(
         self,
@@ -258,23 +252,28 @@ class EdenAIChatConfig(BaseConfig):
         json_mode: Optional[bool] = None,
     ) -> ModelResponse:
         try:
+            # Parse the raw response from the API
             raw_response_json = raw_response.json()
             provider_response = raw_response_json.get(model, {})
-
-            model_response.choices[0].message.content = provider_response.get(
-                "generated_text", ""
-            )
-
+            print("*" * 10)
+            print("PROVIDER RESPONSE")
+            print(raw_response_json)
+            print("*" * 10)
+    
+            # Update the generated text in the response
+            model_response.choices[0].message.content = provider_response.get("generated_text", "")
+    
+            # Extract usage details from the original response
             original_response = provider_response.get("original_response", {})
             usage_data = original_response.get("usage", {})
-
+    
             prompt_tokens = usage_data.get("prompt_tokens", 0)
             completion_tokens = usage_data.get("completion_tokens", 0)
             total_tokens = usage_data.get("total_tokens", 0)
-
+    
             completion_tokens_details = usage_data.get("completion_tokens_details")
             prompt_tokens_details = usage_data.get("prompt_tokens_details")
-
+    
             model_response.usage = Usage(
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
@@ -282,15 +281,18 @@ class EdenAIChatConfig(BaseConfig):
                 completion_tokens_details=completion_tokens_details,
                 prompt_tokens_details=prompt_tokens_details,
             )
-
-            # handle tools
+    
+            # Handle tool calls from the new format
             tool_calls = []
             message_list = provider_response.get("message", [])
-
-            if len(message_list) > 1 and message_list[1].get("tool_calls"):
-                tool_calls = message_list[1]["tool_calls"]
-
+    
+            for message in message_list:
+                if message.get("tool_calls"):  # Check if there are tool calls in the message
+                    tool_calls.extend(message["tool_calls"])
+    
             if tool_calls:
+                print("*" * 10)
+                print("TOOL CALLS")
                 formatted_tool_calls = []
                 for tool in tool_calls:
                     tool_call = {
@@ -298,22 +300,24 @@ class EdenAIChatConfig(BaseConfig):
                         "type": "function",
                         "function": {
                             "name": tool.get("name", ""),
-                            "arguments": tool.get("arguments", "{}"),
+                            "arguments": tool.get("arguments", "{}"),  # Handle tool arguments here
                         },
                     }
                     formatted_tool_calls.append(tool_call)
-
+                    print(tool_call)
+    
+                # Update the model response with tool call details
                 _message = litellm.Message(
                     tool_calls=formatted_tool_calls,
                     content=None,
                 )
                 model_response.choices[0].message = _message
-
+    
         except Exception as e:
             raise EdenAIError(status_code=raw_response.status_code, message=str(e))
-
+    
         return model_response
-
+    
     def get_error_class(
         self, error_message: str, status_code: int, headers: Union[dict, httpx.Headers]
     ) -> BaseLLMException:
