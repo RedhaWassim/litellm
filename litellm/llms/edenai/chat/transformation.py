@@ -1,13 +1,16 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Union, Dict
-import json
+from typing import List, Literal, Optional, Tuple, Union, cast, Dict, Any, TYPE_CHECKING
+import litellm
+from litellm.secret_managers.main import get_secret_str
+from litellm.types.llms.openai import AllMessageValues, ChatCompletionImageObject
+from litellm.types.utils import ModelInfoBase, ProviderSpecificModelInfo
+from litellm.llms.base_llm.chat.transformation import BaseConfig, BaseLLMException
+from litellm.types.utils import ModelResponse, Usage
+
 import httpx
 import json
-
-import litellm
-from litellm.llms.base_llm.chat.transformation import BaseConfig, BaseLLMException
-from litellm.types.llms.openai import AllMessageValues
-from litellm.types.utils import ModelResponse, Usage
+import time
 from ..utils import validate_environment as edenai_validate_environment
+import uuid
 
 if TYPE_CHECKING:
     from litellm.litellm_core_utils.litellm_logging import Logging as _LiteLLMLoggingObj
@@ -24,74 +27,44 @@ class EdenAIError(BaseLLMException):
         self.status_code = status_code
         self.message = message
         self.request = httpx.Request(
-            method="POST", url="https://api.edenai.run/v2/multimodal/chat"
+            method="POST", url="https://api.edenai.run/v2/llm/chat"
         )
         self.response = httpx.Response(status_code=status_code, request=self.request)
         super().__init__(status_code=status_code, message=message, headers=headers)
 
 
 class EdenAIChatConfig(BaseConfig):
-    temperature: Optional[float] = 0
-    max_tokens: Optional[int] = None
+    """
+    Reference: https://docs.edenai.co/reference/llm_llm_chat_create
+    Configuration for EdenAI's Multimodal Chat API
+    """
+
+    # Standard parameters
+    temperature: Optional[float] = None
+    max_completion_tokens: Optional[int] = None
     top_p: Optional[float] = None
-    top_k: Optional[int] = None
-    chat_global_actions: Optional[bool] = None
-    stop_sequences: Optional[List[str]] = None
-    api_key: Optional[str] = None
-    tools: Optional[list] = None
-    tool_results: Optional[list] = None
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    n: Optional[int] = None
+    stop: Optional[List[str]] = None
+    logprobs: Optional[bool] = None
+    top_logprobs: Optional[int] = None
+    seed: Optional[int] = None
+    tools: Optional[List[dict]] = None
+    tool_choice: Optional[str] = None
+    user: Optional[str] = None
 
-    def __init__(
-        self,
-        temperature: Optional[float] = 0,
-        max_tokens: Optional[int] = None,
-        api_key: Optional[str] = None,
-        top_p: Optional[float] = None,
-        top_k: Optional[int] = None,
-        chat_global_actions: Optional[bool] = None,
-        stop_sequences: Optional[List[str]] = None,
-    ) -> None:
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.api_key = api_key
-        self.top_p = top_p
-        self.top_k = top_k
-        self.chat_global_actions = chat_global_actions
-        self.stop_sequences = stop_sequences
+    # EdenAI specific parameters
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = None
+    service_tier: Optional[Literal["auto", "default"]] = "default"
+    modalities: Optional[List[str]] = None
+    prediction: Optional[dict] = None
+    metadata: Optional[List[dict]] = None
 
-    def get_supported_openai_params(self, model: str) -> List[str]:
-        return [
-            "temperature",
-            "max_tokens",
-            "top_p",
-            "top_k",
-            "stop",
-            "tools",
-            "tool_choice",
-        ]
-
-    def map_openai_params(
-        self,
-        non_default_params: dict,
-        optional_params: dict,
-        model: str,
-        drop_params: bool,
-    ) -> dict:
-        for param, value in non_default_params.items():
-            if param == "temperature":
-                optional_params["temperature"] = value
-            if param == "max_tokens":
-                optional_params["max_tokens"] = value
-            if param == "n":
-                optional_params["num_generations"] = value
-            if param == "top_p":
-                optional_params["p"] = value
-            if param == "stop":
-                optional_params["stop_sequences"] = value
-            if param == "tools":
-                optional_params["available_tools"] = value
-
-        return optional_params
+    def __init__(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self, key, value)
 
     def validate_environment(
         self,
@@ -110,87 +83,46 @@ class EdenAIChatConfig(BaseConfig):
             api_key=api_key,
         )
 
-    def _is_multimodal_request(self, messages: List[AllMessageValues]) -> bool:
-        """
-        Check if the request is a multimodal request by inspecting the content of the messages.
+    @classmethod
+    def get_config(cls):
+        return super().get_config()
 
-        Args:
-            messages (List[AllMessagesValues]): The list of messages to check.
+    def get_supported_openai_params(self, model: str) -> List[str]:
+        return [
+            "temperature",
+            "max_completion_tokens",
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "n",
+            "stop",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "tools",
+            "tool_choice",
+            "user",
+            "response_format",
+        ]
 
-        Returns:
-            bool: True if the request is multimodal, False otherwise.
-        """
-        for msg in messages:
-            content = msg.get("content", "")
-            if isinstance(content, str):
-                try:
-                    parsed_content = json.loads(content)
-                    if isinstance(parsed_content, list):
-                        for item in parsed_content:
-                            if (
-                                isinstance(item, dict)
-                                and "type" in item
-                                and item["type"]
-                                in ["text", "media_url", "media_base64"]
-                            ):
-                                return True
+    def map_openai_params(
+        self,
+        non_default_params: dict,
+        optional_params: dict,
+        model: str,
+        drop_params: bool,
+    ) -> dict:
+        param_mapping = {
+            "max_tokens": "max_completion_tokens",
+        }
 
-                except json.JSONDecodeError:
-                    continue
-        return False
+        for param, value in non_default_params.items():
+            if param in param_mapping:
+                optional_params[param_mapping[param]] = value
+            elif param in self.get_supported_openai_params(model):
+                optional_params[param] = value
 
-    def _process_multimodal_messages(
-        self, messages: List[AllMessageValues]
-    ) -> List[Dict[str, Any]]:
-        """
-        Process messages for a multimodal request by parsing the content.
-
-        Args:
-            messages (List[AllMessagesValues]]): The list of messages.
-
-        Returns:
-            List[Dict[str, Any]]: The processed list of messages.
-        """
-        formatted_messages = []
-        for msg in messages:
-            role = msg["role"]
-            content = msg["content"]
-
-            if isinstance(content, str):
-                try:
-                    parsed_content = json.loads(content)
-                    formatted_messages.append({"role": role, "content": parsed_content})
-                except json.JSONDecodeError:
-                    raise ValueError("Malformed JSON in multimodal message content")
-            else:
-                raise ValueError("Unsupported content format for multimodal request")
-
-        return formatted_messages
-
-    def format_tools(self, tools: list) -> list:
-        """
-        Format the available tools for the API request.
-
-        Args:
-            tools (list): The list of available tools.
-
-        Returns:
-            dict: The formatted tools.
-        """
-        formatted_tools = []
-        for tool in tools:
-            function_data = tool["function"]
-            formatted_tool = {
-                "name": function_data["name"],
-                "description": function_data["description"],
-                "parameters": {
-                    "type": function_data["parameters"]["type"],
-                    "properties": function_data["parameters"]["properties"],
-                    "required": function_data["parameters"]["required"],
-                },
-            }
-            formatted_tools.append(formatted_tool)
-        return formatted_tools
+        return optional_params
 
     def transform_request(
         self,
@@ -200,49 +132,22 @@ class EdenAIChatConfig(BaseConfig):
         litellm_params: dict,
         headers: dict,
     ) -> dict:
-        formatted_messages = (
-            self._process_multimodal_messages(messages)
-            if self._is_multimodal_request(messages)
-            else [
-                {
-                    "role": msg["role"],
-                    "content": [{"type": "text", "content": {"text": msg["content"]}}],
-                }
-                for msg in messages
-            ]
-        )
-
-        available_tools = optional_params.pop("available_tools", None)
-        if available_tools:
-            available_tools = self.format_tools(available_tools)
-
+        # Build the request payload
         payload = {
-            **optional_params, 
+            "model": model,
+            "messages": messages,
             "providers": [model],
-            "messages": formatted_messages,
-            "response_as_dict": True,
-            "attributes_as_list": False,
-            "show_base_64": True,
-            "show_original_response": True,
+            **optional_params,
         }
-        print(payload["messages"])
-
-        if available_tools:
-            # print("*"*10)
-            # print("AVAILABLE TOOLS")
-            # print(available_tools)
-            # print("*"*10)
-            payload["available_tools"] = available_tools
 
         return payload
-
 
     def transform_response(
         self,
         model: str,
         raw_response: httpx.Response,
         model_response: ModelResponse,
-        logging_obj: LiteLLMLoggingObj,
+        logging_obj: Any,
         request_data: dict,
         messages: List[AllMessageValues],
         optional_params: dict,
@@ -251,76 +156,11 @@ class EdenAIChatConfig(BaseConfig):
         api_key: Optional[str] = None,
         json_mode: Optional[bool] = None,
     ) -> ModelResponse:
-        try:
-            # Parse the raw response from the API
-            raw_response_json = raw_response.json()
-            provider_response = raw_response_json.get(model, {})
-            print("*" * 10)
-            print("PROVIDER RESPONSE")
-            print(raw_response_json)
-            print("*" * 10)
-    
-            # Update the generated text in the response
-            model_response.choices[0].message.content = provider_response.get("generated_text", "")
-    
-            # Extract usage details from the original response
-            original_response = provider_response.get("original_response", {})
-            usage_data = original_response.get("usage", {})
-    
-            prompt_tokens = usage_data.get("prompt_tokens", 0)
-            completion_tokens = usage_data.get("completion_tokens", 0)
-            total_tokens = usage_data.get("total_tokens", 0)
-    
-            completion_tokens_details = usage_data.get("completion_tokens_details")
-            prompt_tokens_details = usage_data.get("prompt_tokens_details")
-    
-            model_response.usage = Usage(
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=total_tokens,
-                completion_tokens_details=completion_tokens_details,
-                prompt_tokens_details=prompt_tokens_details,
-            )
-    
-            # Handle tool calls from the new format
-            tool_calls = []
-            message_list = provider_response.get("message", [])
-    
-            for message in message_list:
-                if message.get("tool_calls"):  # Check if there are tool calls in the message
-                    tool_calls.extend(message["tool_calls"])
-    
-            if tool_calls:
-                print("*" * 10)
-                print("TOOL CALLS")
-                formatted_tool_calls = []
-                for tool in tool_calls:
-                    tool_call = {
-                        "id": tool.get("id", ""),
-                        "type": "function",
-                        "function": {
-                            "name": tool.get("name", ""),
-                            "arguments": tool.get("arguments", "{}"),  # Handle tool arguments here
-                        },
-                    }
-                    formatted_tool_calls.append(tool_call)
-                    print(tool_call)
-    
-                # Update the model response with tool call details
-                _message = litellm.Message(
-                    tool_calls=formatted_tool_calls,
-                    content=None,
-                )
-                model_response.choices[0].message = _message
-    
-        except Exception as e:
-            raise EdenAIError(status_code=raw_response.status_code, message=str(e))
-    
+        response_json = raw_response.json()
+        model_response = ModelResponse(**response_json)
         return model_response
-    
+
     def get_error_class(
         self, error_message: str, status_code: int, headers: Union[dict, httpx.Headers]
     ) -> BaseLLMException:
-        return EdenAIError(
-            status_code=status_code, message=error_message, headers=headers
-        )
+        return EdenAIError(status_code=status_code, message=error_message)

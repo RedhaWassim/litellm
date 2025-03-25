@@ -12,14 +12,14 @@ def validate_environment(
     """
     Return headers to use for edenai chat completion request
 
-    EdenAI API Ref: https://docs.edenai.co/reference/multimodal_multimodal_chat_create
+    EdenAI API Ref: https://docs.edenai.co/reference/llm_llm_chat_create
 
     Expected headers:
     {
         "Request-Source": "unspecified:litellm",
         "accept": "application/json",
         "content-type": "application/json",
-        "Authorization": "bearer $CO_API_KEY"
+        "Authorization": "bearer $EDENAI_API_KEY"
     }
     """
     headers.update({"accept": "application/json", "content-type": "application/json"})

@@ -2816,7 +2816,7 @@ def completion(  # type: ignore # noqa: PLR0915
                 or get_secret("EDENAI_API_KEY")
                 or litellm.api_key
             )
-            api_base = "https://api.edenai.run/v2/multimodal/chat"
+            api_base = "https://api.edenai.run/v2/llm/chat"
 
             headers = headers or litellm.headers or {}
             if headers is None:
