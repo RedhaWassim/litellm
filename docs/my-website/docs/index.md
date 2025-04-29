@@ -200,26 +200,20 @@ print(response)
 ## Example 2: EdenAI Multimodal Request
 # Multimodal request with text and image
 response = completion(
-    model="edenai/google/gemini-1.5-flash",
+    model="edenai/openai/gpt-4o",
     messages=[
-        {
-            "role": "user",
-            "content": """[
-                {
-                    "type": "text",
-                    "content": {
-                        "text": "Is there a lizard in the image?"
-                    }
-                },
-                {
-                    "type": "media_url",
-                    "content": {
-                        "media_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS53fbiM_1J_a_gPfGctjxQUWRxhj3-l8ueSw&s",
-                        "media_type": "image/jpeg"
-                    }
-                }
-            ]"""
-        }
+        {"role": "user", "content":[
+            {
+                "type": "text",
+                "text": "what is the emotion in this man's face?"
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA2xNb4xY7_pK886sVo7JhjAdXxvch6zXIMg&s"
+                              }
+            }
+]}
     ],
 )
 

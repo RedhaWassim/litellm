@@ -35,24 +35,18 @@ os.environ['EDENAI_API_KEY'] = ""
 response = completion(
     model="edenai/google/gemini-1.5-flash",
     messages=[
-    {
-        "role": "user",
-        "content": """[
+{"role": "user", "content":[
             {
                 "type": "text",
-                "content": {
-                    "text": "is there a lizard in the image?"
-                }
+                "text": "what is the emotion in this man's face?"
             },
             {
-                "type": "media_url",
-                "content": {
-                    "media_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS53fbiM_1J_a_gPfGctjxQUWRxhj3-l8ueSw&s",
-                    "media_type": "image/jpeg"
-                }
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA2xNb4xY7_pK886sVo7JhjAdXxvch6zXIMg&s"
+                              }
             }
-        ]"""
-    }
+]}
 ],
 )
 
@@ -62,83 +56,79 @@ response = completion(
 ### Models that support Multimodal 
 | Model Name       | Function Call                        |
 |------------------|--------------------------------------|
-|anthropic/claude-3-haiku-20240307 |	`completion(model="edenai/anthropic/claude-3-haiku-20240307", messages)`| 
-|anthropic/claude-3-haiku-20240307-v1:0 |	`completion(model="edenai/anthropic/claude-3-haiku-20240307-v1:0", messages)`| 
-|anthropic/claude-3-sonnet-20240229-v1:0	| `completion(model="edenai/anthropic/claude-3-sonnet-20240229-v1:0", messages)`| 
-|anthropic/claude-3-5-sonnet-20240620-v1:0 |	`completion(model="edenai/anthropic/claude-3-5-sonnet-20240620-v1:0", messages)`| 
-|anthropic/claude-3-opus-20240229 |	`completion(model="edenai/anthropic/claude-3-opus-20240229", messages)`| 
-|anthropic/claude-3-sonnet-20240229 | `completion(model="edenai/anthropic/claude-3-sonnet-20240229", messages)`| 
-|anthropic/claude-3-5-sonnet-20240620 |	`completion(model="edenai/anthropic/claude-3-5-sonnet-20240620", messages)`| 
-|google/gemini-1.5-pro-exp-0801 |	`completion(model="edenai/google/gemini-1.5-pro-exp-0801", messages)`| 
-|google/gemini-1.5-pro-exp-0827 |	`completion(model="edenai/google/gemini-1.5-pro-exp-0827", messages)`| 
-|google/gemini-1.5-flash-exp-0801 |	`completion(model="edenai/google/gemini-1.5-flash-exp-0801", messages)`| 
-|google/gemini-1.5-flash-exp-0827 |	`completion(model="edenai/google/gemini-1.5-flash-exp-0827", messages)`| 
-|google/gemini-1.5-flash |	`completion(model="edenai/google/gemini-1.5-flash", messages)`| 
-|google/gemini-1.5-pro |	`completion(model="edenai/google/gemini-1.5-pro", messages)`| 
-|google/gemini-1.5-flash-latest |	`completion(model="edenai/google/gemini-1.5-flash-latest", messages)`| 
-|google/gemini-pro |	`completion(model="edenai/google/gemini-pro", messages)`| 
-|google/gemini-1.5-pro-latest |	`completion(model="edenai/google/gemini-1.5-pro-latest", messages)`| 
-|google/gemini-pro-vision |	`completion(model="edenai/google/gemini-pro-vision", messages)`| 
-|openai/gpt-4-vision-preview | `completion(model="edenai/openai/gpt-4-vision-preview", messages)`| 
-|openai/gpt-4 |	`completion(model="edenai/openai/gpt-4", messages)`| 
-|openai/gpt-4o |	`completion(model="edenai/openai/gpt-4o", messages)`| 
-|openai/gpt-4-turbo |	`completion(model="edenai/openai/gpt-4-turbo", messages)`| 
-|openai/gpt-4o-mini |	`completion(model="edenai/openai/gpt-4o-mini", messages)`| 
-|openai/gpt-4o-2024-05-13 |	`completion(model="edenai/openai/gpt-4o-2024-05-13", messages)`| 
-|openai/gpt-4o-mini-2024-07-18 |	`completion(model="edenai/openai/gpt-4o-mini-2024-07-18", messages)`| 
-
-### Models that support ToolCalls 
-
-| Model Name       | Function Call                        |
-|------------------|--------------------------------------|
-|openai/gpt-3.5-turbo-1106 | `completion(model="edenai/openai/gpt-3.5-turbo-1106", messages)`|
-|openai/gpt-3.5-turbo-16k | `completion(model="edenai/openai/gpt-3.5-turbo-16k", messages)`|
-|openai/gpt-4-turbo-2024-04-09 |	`completion(model="edenai/openai/gpt-4-turbo-2024-04-09", messages)`|
-|openai/gpt-4o |	`completion(model="edenai/openai/gpt-4o", messages)`|
-|openai/gpt-4-1106-preview |	`completion(model="edenai/openai/gpt-4-1106-preview", messages)`|
-|openai/gpt-4-vision-preview |	`completion(model="edenai/openai/gpt-4-vision-preview", messages)`|
-|openai/gpt-3.5-turbo-0125 |	`completion(model="edenai/openai/gpt-3.5-turbo-0125", messages)`|
-|openai/gpt-4-32k- |	`completion(model="edenai/openai/gpt-4-32k-0314", messages)`|
-|openai/gpt-4o-mini	 | `completion(model="edenai/openai/gpt-4o-mini", messages)`|
-|openai/gpt-4-0314	 | `completion(model="edenai/openai/gpt-4-0314", messages)`|
-|openai/gpt-4	| `completion(model="edenai/openai/gpt-4", messages)`|
-|openai/gpt-3.5-turbo| `completion(model="edenai/openai/gpt-3.5-turbo", messages)`|
-|openai/o1-|	`completion(model="edenai/openai/o1-preview", messages)`|
-|openai/o1-preview-2024-09-12	|`completion(model="edenai/openai/o1-preview-2024-09-12", messages)`|
-|openai/o1-mini|	`completion(model="edenai/openai/o1-mini", messages)`|
-|openai/o1-mini-2024-09-12|	`completion(model="edenai/openai/o1-mini-2024-09-12", messages)`|
-|openai/gpt-4o-2024-05-|	`completion(model="edenai/openai/gpt-4o-2024-05-13", messages)`|
-|google/chat-bison|	`completion(model="edenai/google/chat-bison", messages)`|
-|google/gemini-1.5-flash	|`completion(model="edenai/google/gemini-1.5-flash", messages)`|
-|google/gemini-1.5-pro	|`completion(model="edenai/google/gemini-1.5-pro", messages)`|
-|cohere/command-light	|`completion(model="edenai/cohere/command-light", messages)`|
-|cohere/command-nightly	|`completion(model="edenai/cohere/command-nightly", messages)`|
-|cohere/command|	`completion(model="edenai/cohere/command", messages)`|
-|cohere/command-light-|	`completion(model="edenai/cohere/command-light-nightly", messages)`|
-|cohere/command-r|	`completion(model="edenai/cohere/command-r", messages)`|
-|cohere/command-r-plus|	`completion(model="edenai/cohere/command-r-plus", messages)`|
-|meta/llama3-1-405b-instruct-v1:0	|`completion(model="edenai/meta/llama3-1-405b-instruct-v1:0", messages)`|
-|meta/llama3-1-70b-instruct-v1:0	|`completion(model="edenai/meta/llama3-1-70b-instruct-v1:0", messages)`|
-|meta/llama3-1-8b-instruct-v1:|	`completion(model="edenai/meta/llama3-1-8b-instruct-v1:0", messages)`|
-|meta/llama3-70b-instruct-v1:0	|`completion(model="edenai/meta/llama3-70b-instruct-v1:0", messages)`|
-|meta/llama3-8b-instruct-v1:0	|`completion(model="edenai/meta/llama3-8b-instruct-v1:0", messages)`|
-|mistral/small|	`completion(model="edenai/mistral/small", messages)`|
-|mistral/medium	|`completion(model="edenai/mistral/medium", messages)`|
-|mistral/tiny|	`completion(model="edenai/mistral/tiny", messages)`|
-|mistral/large-|	`completion(model="edenai/mistral/large-latest", messages)`|
-|mistral/ministral-3b-latest|	`completion(model="edenai/mistral/ministral-3b-latest", messages)`|
-|mistral/ministral-8b-latest|	`completion(model="edenai/mistral/ministral-8b-latest", messages)`|
-|mistral/mistral-large-2407	|`completion(model="edenai/mistral/mistral-large-2407", messages)`|
-|mistral/mistral-small-2409	|`completion(model="edenai/mistral/mistral-small-2409", messages)`|
-|perplexityai/llama-3.1-sonar-huge-128k-online|	`completion(model="edenai/perplexityai/llama-3.1-sonar-huge-128k-online", messages)`|
-|perplexityai/llama-3.1-sonar-small-128k-chat|	`completion(model="edenai/perplexityai/llama-3.1-sonar-small-128k-chat", messages)`|
-|perplexityai/llama-3.1-sonar-small-128k-online	|`completion(model="edenai/perplexityai/llama-3.1-sonar-small-128k-online", messages)`|
-|perplexityai/llama-3.1-8b-instruct	|`completion(model="edenai/perplexityai/llama-3.1-8b-instruct", messages)`|
-|perplexityai/llama-3.1-70b-instruct|	`completion(model="edenai/perplexityai/llama-3.1-70b-instruct", messages)`|
-|perplexityai/llama-3.1-sonar-large-128k-chat|	`completion(model="edenai/perplexityai/llama-3.1-sonar-large-128k-chat", messages)`|
-|perplexityai/llama-3.1-sonar-large-128k-online|`completion(model="edenai/perplexityai/llama-3.1-sonar-large-128k-online", messages)`|
-|anthropic/claude-3-sonnet-20240229-v1:0	|`completion(model="edenai/anthropic/claude-3-sonnet-20240229-v1:0", messages)`|
-|anthropic/claude-instant-v1|	`completion(model="edenai/anthropic/claude-instant-v1", messages)`|
-|anthropic/claude-v2|`completion(model="edenai/anthropic/claude-v2", messages)`|
-|anthropic/claude-3-haiku-20240307-v1:|	`completion(model="edenai/anthropic/claude-3-haiku-20240307-v1:0", messages)`|
-|anthropic/claude-3-5-sonnet-20240620-v1:0	|`completion(model="edenai/anthropic/claude-3-5-sonnet-20240620-v1:0", messages)`|
+|amazon/eu.amazon.nova-lite-v1:0|`completion(model="edenai/amazon/eu.amazon.nova-lite-v1:0", messages)`|
+|amazon/amazon.nova-lite-v1:0|`completion(model="edenai/amazon/amazon.nova-lite-v1:0", messages)`|
+|amazon/amazon.nova-micro-v1:0|`completion(model="edenai/amazon/amazon.nova-micro-v1:0", messages)`|
+|amazon/amazon.nova-pro-v1:0|`completion(model="edenai/amazon/amazon.nova-pro-v1:0", messages)`|
+|anthropic/claude-3-5-sonnet-latest|`completion(model="edenai/anthropic/claude-3-5-sonnet-latest", messages)`|
+|anthropic/claude-3-5-haiku-latest|`completion(model="edenai/anthropic/claude-3-5-haiku-latest", messages)`|
+|anthropic/claude-3-opus-latest|`completion(model="edenai/anthropic/claude-3-opus-latest", messages)`|
+|anthropic/claude-3-7-sonnet-latest|`completion(model="edenai/anthropic/claude-3-7-sonnet-latest", messages)`|
+|cohere/command-r7b-12-2024|`completion(model="edenai/cohere/command-r7b-12-2024", messages)`|
+|cohere/command-r-plus-08-2024|`completion(model="edenai/cohere/command-r-plus-08-2024", messages)`|
+|cohere/command-r-plus|`completion(model="edenai/cohere/command-r-plus", messages)`|
+|cohere/command-r-08-2024|`completion(model="edenai/cohere/command-r-08-2024", messages)`|
+|cohere/command-r-03-2024|`completion(model="edenai/cohere/command-r-03-2024", messages)`|
+|cohere/command-r|`completion(model="edenai/cohere/command-r", messages)`|
+|cohere/command|`completion(model="edenai/cohere/command", messages)`|
+|cohere/command-light|`completion(model="edenai/cohere/command-light", messages)`|
+|deepseek/deepseek-chat|`completion(model="edenai/deepseek/deepseek-chat", messages)`|
+|deepseek/deepseek-reasoner|`completion(model="edenai/deepseek/deepseek-reasoner", messages)`|
+|meta/meta.llama3-1-405b-instruct-v1:0|`completion(model="edenai/meta/meta.llama3-1-405b-instruct-v1:0", messages)`|
+|meta/meta.llama3-1-70b-instruct-v1:0|`completion(model="edenai/meta/meta.llama3-1-70b-instruct-v1:0", messages)`|
+|meta/meta.llama3-1-8b-instruct-v1:0|`completion(model="edenai/meta/meta.llama3-1-8b-instruct-v1:0", messages)`|
+|mistral/pixtral-large-latest|`completion(model="edenai/mistral/pixtral-large-latest", messages)`|
+|mistral/mistral-small-latest|`completion(model="edenai/mistral/mistral-small-latest", messages)`|
+|mistral/codestral-latest|`completion(model="edenai/mistral/codestral-latest", messages)`|
+|mistral/mistral-large-latest|`completion(model="edenai/mistral/mistral-large-latest", messages)`|
+|openai/gpt-4.1-2025-04-14|`completion(model="edenai/openai/gpt-4.1-2025-04-14", messages)`|
+|openai/gpt-4.1-mini-2025-04-14|`completion(model="edenai/openai/gpt-4.1-mini-2025-04-14", messages)`|
+|openai/gpt-4.1-nano-2025-04-14|`completion(model="edenai/openai/gpt-4.1-nano-2025-04-14", messages)`|
+|openai/o3-2025-04-16|`completion(model="edenai/openai/o3-2025-04-16", messages)`|
+|openai/o4-mini-2025-04-16|`completion(model="edenai/openai/o4-mini-2025-04-16", messages)`|
+|openai/gpt-4|`completion(model="edenai/openai/gpt-4", messages)`|
+|openai/gpt-4o|`completion(model="edenai/openai/gpt-4o", messages)`|
+|openai/gpt-4o-mini|`completion(model="edenai/openai/gpt-4o-mini", messages)`|
+|openai/o1-preview|`completion(model="edenai/openai/o1-preview", messages)`|
+|openai/o1-mini|`completion(model="edenai/openai/o1-mini", messages)`|
+|openai/gpt-4o-2024-05-13|`completion(model="edenai/openai/gpt-4o-2024-05-13", messages)`|
+|openai/gpt-4-turbo|`completion(model="edenai/openai/gpt-4-turbo", messages)`|
+|openai/o1-2024-12-17|`completion(model="edenai/openai/o1-2024-12-17", messages)`|
+|openai/o1|`completion(model="edenai/openai/o1", messages)`|
+|openai/o3-mini|`completion(model="edenai/openai/o3-mini", messages)`|
+|openai/gpt-4.5-preview-2025-02-27|`completion(model="edenai/openai/gpt-4.5-preview-2025-02-27", messages)`|
+|openai/o1-mini-2024-09-12|`completion(model="edenai/openai/o1-mini-2024-09-12", messages)`|
+|openai/o3-mini-2025-01-31|`completion(model="edenai/openai/o3-mini-2025-01-31", messages)`|
+|openai/gpt-4o-2024-08-06|`completion(model="edenai/openai/gpt-4o-2024-08-06", messages)`|
+|openai/gpt-4o-mini-2024-07-18|`completion(model="edenai/openai/gpt-4o-mini-2024-07-18", messages)`|
+|openai/gpt-3.5-turbo|`completion(model="edenai/openai/gpt-3.5-turbo", messages)`|
+|together_ai/Qwen/Qwen2.5-72B-Instruct-Turbo|`completion(model="edenai/together_ai/Qwen/Qwen2.5-72B-Instruct-Turbo", messages)`|
+|together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo|`completion(model="edenai/together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo", messages)`|
+|together_ai/microsoft/WizardLM-2-8x22B|`completion(model="edenai/together_ai/microsoft/WizardLM-2-8x22B", messages)`|
+|xai/grok-2-latest|`completion(model="edenai/xai/grok-2-latest", messages)`|
+|xai/grok-2|`completion(model="edenai/xai/grok-2", messages)`|
+|xai/grok-2-vision-1212|`completion(model="edenai/xai/grok-2-vision-1212", messages)`|
+|google/gemini-2.5-pro-preview-03-25|`completion(model="edenai/google/gemini-2.5-pro-preview-03-25", messages)`|
+|google/gemini-2.5-flash-preview-04-17|`completion(model="edenai/google/gemini-2.5-flash-preview-04-17", messages)`|
+|google/gemini-2.0-flash-lite|`completion(model="edenai/google/gemini-2.0-flash-lite", messages)`|
+|google/gemini-1.5-flash|`completion(model="edenai/google/gemini-1.5-flash", messages)`|
+|google/gemini-1.5-pro|`completion(model="edenai/google/gemini-1.5-pro", messages)`|
+|google/gemini-1.5-flash-latest|`completion(model="edenai/google/gemini-1.5-flash-latest", messages)`|
+|google/gemini-1.5-pro-latest|`completion(model="edenai/google/gemini-1.5-pro-latest", messages)`|
+|google/gemini-1.5-flash-8b|`completion(model="edenai/google/gemini-1.5-flash-8b", messages)`|
+|google/gemini-1.5-flash-8b-latest|`completion(model="edenai/google/gemini-1.5-flash-8b-latest", messages)`|
+|google/gemini-2.0-flash|`completion(model="edenai/google/gemini-2.0-flash", messages)`|
+|google/gemini-2.5-pro-exp-03-25|`completion(model="edenai/google/gemini-2.5-pro-exp-03-25", messages)`|
+|google/gemini-2.0-flash-lite-preview-02-05|`completion(model="edenai/google/gemini-2.0-flash-lite-preview-02-05", messages)`|
+|groq/llama-3.1-8b-instant|`completion(model="edenai/groq/llama-3.1-8b-instant", messages)`|
+|groq/llama3-70b-8192|`completion(model="edenai/groq/llama3-70b-8192", messages)`|
+|groq/llama3-8b-8192|`completion(model="edenai/groq/llama3-8b-8192", messages)`|
+|groq/gemma2-9b-it|`completion(model="edenai/groq/gemma2-9b-it", messages)`|
+|groq/llama-3.3-70b-versatile|`completion(model="edenai/groq/llama-3.3-70b-versatile", messages)`|
+|microsoft/gpt-4o|`completion(model="edenai/microsoft/gpt-4o", messages)`|
+|microsoft/o3-mini|`completion(model="edenai/microsoft/o3-mini", messages)`|
+|microsoft/o1-mini|`completion(model="edenai/microsoft/o1-mini", messages)`|
+|microsoft/gpt-4o-mini|`completion(model="edenai/microsoft/gpt-4o-mini", messages)`|
+|microsoft/gpt-4|`completion(model="edenai/microsoft/gpt-4", messages)`|
+|microsoft/gpt-35-turbo-16k|`completion(model="edenai/microsoft/gpt-35-turbo-16k", messages)`|
+|microsoft/gpt-35-turbo|`completion(model="edenai/microsoft/gpt-35-turbo", messages)`|
