@@ -4533,7 +4533,7 @@ def test_completion_edenai():
             },
         ]
         response = completion(
-            model="edenai/google/gemini-1.5-flash",
+            model="edenai/openai/gpt-4o",
             messages=messages,
         )
         print(response)
