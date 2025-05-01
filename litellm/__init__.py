@@ -480,6 +480,7 @@ azure_text_models: List = []
 anyscale_models: List = []
 cerebras_models: List = []
 galadriel_models: List = []
+edenai_models: List = []
 sambanova_models: List = []
 
 
@@ -591,6 +592,8 @@ def add_known_models():
             cerebras_models.append(key)
         elif value.get("litellm_provider") == "galadriel":
             galadriel_models.append(key)
+        elif value.get("litellm_provider") == "edenai":
+            edenai_models.append(key)
         elif value.get("litellm_provider") == "sambanova_models":
             sambanova_models.append(key)
 
@@ -613,6 +616,7 @@ openai_compatible_endpoints: List = [
     "api.sambanova.ai/v1",
     "api.x.ai/v1",
     "api.galadriel.ai/v1",
+    "https://api.edenai.run/v2/llm"
 ]
 
 # this is maintained for Exception Mapping
@@ -642,6 +646,7 @@ openai_compatible_providers: List = [
     "hosted_vllm",
     "lm_studio",
     "galadriel",
+    "edenai"
 ]
 openai_text_completion_compatible_providers: List = (
     [  # providers that support `/v1/completions`
@@ -858,6 +863,7 @@ model_list = (
     + galadriel_models
     + sambanova_models
     + azure_text_models
+    + edenai_models
 )
 
 
@@ -909,6 +915,7 @@ models_by_provider: dict = {
     "anyscale": anyscale_models,
     "cerebras": cerebras_models,
     "galadriel": galadriel_models,
+    "edenai": edenai_models,
     "sambanova": sambanova_models,
 }
 
@@ -1019,6 +1026,7 @@ from .llms.custom_llm import CustomLLM
 from .llms.openai_like.chat.handler import OpenAILikeChatConfig
 from .llms.aiohttp_openai.chat.transformation import AiohttpOpenAIChatConfig
 from .llms.galadriel.chat.transformation import GaladrielChatConfig
+from .llms.edenai.chat.transformation import EdenaiChatConfig
 from .llms.github.chat.transformation import GithubChatConfig
 from .llms.empower.chat.transformation import EmpowerChatConfig
 from .llms.huggingface.chat.transformation import (

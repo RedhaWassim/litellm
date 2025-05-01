@@ -6178,6 +6178,8 @@ class ProviderConfigManager:
             return litellm.LMStudioChatConfig()
         elif litellm.LlmProviders.GALADRIEL == provider:
             return litellm.GaladrielChatConfig()
+        elif litellm.LlmProviders.EDENAI == provider:
+            return litellm.EdenaiChatConfig()
         elif litellm.LlmProviders.REPLICATE == provider:
             return litellm.ReplicateConfig()
         elif litellm.LlmProviders.HUGGINGFACE == provider:

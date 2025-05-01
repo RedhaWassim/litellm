@@ -1797,6 +1797,7 @@ class LlmProviders(str, Enum):
     HOSTED_VLLM = "hosted_vllm"
     LM_STUDIO = "lm_studio"
     GALADRIEL = "galadriel"
+    EDENAI = "edenai"
     INFINITY = "infinity"
     DEEPGRAM = "deepgram"
     AIOHTTP_OPENAI = "aiohttp_openai"

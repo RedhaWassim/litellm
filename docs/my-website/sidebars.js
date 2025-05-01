@@ -202,6 +202,7 @@ const sidebars = {
         "providers/perplexity", 
         "providers/friendliai",
         "providers/galadriel",
+        "providers/edenai",
         "providers/groq", 
         "providers/github", 
         "providers/deepseek", 
