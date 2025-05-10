@@ -199,5 +199,9 @@ def get_supported_openai_params(  # noqa: PLR0915
                     model=model
                 )
             )
+    elif custom_llm_provider == "edenai":
+        return litellm.EdenAIChatConfig().get_supported_openai_params(
+            model=model
+        )
 
     return None

@@ -177,6 +177,50 @@ response = completion(
 ```
 
 </TabItem>
+<TabItem value="edenai" label="EdenAI">
+
+```python
+from litellm import completion
+
+import os
+
+## Example 1: Basic EdenAI OpenAI Call
+# Set your API key as an environment variable
+os.environ["EDENAI_API_KEY"] = "your-edenai-api-key"
+
+# Make a simple chat completion request using EdenAI with OpenAI model
+response = completion(
+    model="edenai/openai/gpt-4o",
+    messages=[{ "content": "Hello, how are you?", "role": "user" }],
+)
+
+print("Edenai gpt-4o model Response:\n")
+print(response)
+
+## Example 2: EdenAI Multimodal Request
+# Multimodal request with text and image
+response = completion(
+    model="edenai/openai/gpt-4o",
+    messages=[
+        {"role": "user", "content":[
+            {
+                "type": "text",
+                "text": "what is the emotion in this man's face?"
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA2xNb4xY7_pK886sVo7JhjAdXxvch6zXIMg&s"
+                              }
+            }
+]}
+    ],
+)
+
+print("Edenai gemini multimodal request Response:\n")
+print(response)
+```
+</TabItem> 
 
 </Tabs>
 

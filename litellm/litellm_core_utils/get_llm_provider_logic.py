@@ -135,7 +135,7 @@ def get_llm_provider(  # noqa: PLR0915
                 model = model.replace("{}/".format(custom_llm_provider), "")
 
             return model, custom_llm_provider, dynamic_api_key, api_base
-
+        
         if api_key and api_key.startswith("os.environ/"):
             dynamic_api_key = get_secret_str(api_key)
         # check if llm provider part of model name
@@ -314,6 +314,8 @@ def get_llm_provider(  # noqa: PLR0915
             custom_llm_provider = "openai"
         elif model in litellm.empower_models:
             custom_llm_provider = "empower"
+        elif model in litellm.edenai_models:
+            custom_llm_provider = "edenai"
         elif model == "*":
             custom_llm_provider = "openai"
         if not custom_llm_provider:

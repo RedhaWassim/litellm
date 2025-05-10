@@ -4520,3 +4520,45 @@ def test_humanloop_completion(monkeypatch):
         prompt_variables={"person": "John"},
         messages=[{"role": "user", "content": "Tell me a joke."}],
     )
+
+@pytest.mark.focus
+def test_completion_edenai():
+    try:
+        litellm.set_verbose = True
+        messages = [
+            {"role": "system", "content": "You're a good bot"},
+            {
+                "role": "user",
+                "content": "Hey",
+            },
+        ]
+        response = completion(
+            model="edenai/openai/gpt-4o",
+            messages=messages,
+        )
+        print(response)
+    except Exception as e:
+        pytest.fail(f"Error occurred: {e}")
+
+@pytest.mark.focus
+@pytest.mark.parametrize(
+    "api_key", [("my-bad-api-key", None)]
+)
+def test_completion_edenai_dynamic_params(api_key):
+    try:
+        litellm.set_verbose = True
+        messages = [
+            {"role": "system", "content": "You're a good bot"},
+            {
+                "role": "user",
+                "content": "Hey",
+            },
+        ]
+        response = completion(
+            model="edenai/openai/gpt-4o",
+            messages=messages,
+            api_key=api_key,
+        )
+        pytest.fail(f"This call should have failed!")
+    except Exception as e:
+        pass
